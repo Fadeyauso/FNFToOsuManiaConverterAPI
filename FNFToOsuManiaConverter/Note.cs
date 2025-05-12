@@ -12,14 +12,13 @@ namespace FNFToOsuManiaConverter
         public int noteData;
         public bool mustPress;
         public bool isHoldNote;
-        public Note prevNote;
         public int osuX = 0;
         public int osuY = 192;
         public int osuStrumTime = 0;
         public int osuType = 1;
         public int osuSustainTime = 0;
 
-        public static Note Create(decimal strumTime, int noteData, bool mustPress, bool isHoldNote, Note prevNote)
+        public static Note Create(decimal strumTime, int noteData, bool mustPress, bool isHoldNote)
         {
             Note newNote = new Note();
 
@@ -27,7 +26,6 @@ namespace FNFToOsuManiaConverter
             newNote.noteData = noteData;
             newNote.mustPress = mustPress;
             newNote.isHoldNote = isHoldNote;
-            newNote.prevNote = prevNote;
 
             return newNote;
         }

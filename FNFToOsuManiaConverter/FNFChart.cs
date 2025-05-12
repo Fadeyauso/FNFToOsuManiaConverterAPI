@@ -18,6 +18,7 @@ namespace FNFToOsuManiaConverter
             if (!string.IsNullOrEmpty(filePath))
             {
                 FNFChart fnfChart = new FNFChart(filePath);
+                string diffName = "";
                 var noteData = fnfChart.songData.song.notes;
 
                 for (int i = 0; i < noteData.Count; i++)
@@ -32,7 +33,7 @@ namespace FNFToOsuManiaConverter
                             int noteDataIndex = (int)section.sectionNotes[v][1];
                             bool gottaHitNote = section.mustHitSection;
 
-                            if (noteDataIndex > 3 && whichNotesToUse == 1) //only bf notes
+                            if (noteDataIndex > 3) //only bf notes
                             {
                                 gottaHitNote = !section.mustHitSection;
                             }
@@ -44,18 +45,31 @@ namespace FNFToOsuManiaConverter
                                 oldNote = actualNotes[actualNotes.Count - 1];
                             }
 
-                            Note newNote = Note.Create(strumTime, noteDataIndex, gottaHitNote, false, oldNote);
+                            Note newNote = Note.Create(strumTime, noteDataIndex, gottaHitNote, false);
                             newNote.ConvertToMania();
 
                             if(whichNotesToUse == 0)
                             {
-                                newNote.mustPress = !newNote.mustPress;
+                                if (!newNote.mustPress && !newNote.isHoldNote)
+                                {
+                                    diffName = "Opponent";
+                                    actualNotes.Add(newNote);
+                                }
+                            }
+                            else if(whichNotesToUse == 1)
+                            {
+                                if (newNote.mustPress && !newNote.isHoldNote) //only bf notes
+                                {
+                                    diffName = "BF";
+                                    actualNotes.Add(newNote);
+                                }
+                            }
+                            else if (whichNotesToUse == 2 && !newNote.isHoldNote)
+                            {
+                                diffName = "Both";
+                                actualNotes.Add(newNote);
                             }
 
-                            actualNotes.Add(newNote);
-
-                            //broken for now
-                            /*
                             decimal sustainLength = section.sectionNotes[v][2];
                             int flooredSus = decimal.ToInt32(sustainLength);
 
@@ -65,20 +79,45 @@ namespace FNFToOsuManiaConverter
 
                                 oldNote = actualNotes[actualNotes.Count - 1];
 
-                                Note sustainNote = Note.Create(strumTime, noteDataIndex, gottaHitNote, true, oldNote);
+                                Note sustainNote = Note.Create(strumTime, noteDataIndex, gottaHitNote, true);
                                 sustainNote.ConvertToMania();
                                 sustainNote.osuSustainTime = osuFormattedLength;
-                                actualNotes.Add(sustainNote);
+
+                                if (whichNotesToUse == 0)
+                                {
+                                    if (!sustainNote.mustPress)
+                                    {
+                                        actualNotes.Remove(oldNote);
+                                        actualNotes.Add(sustainNote);
+                                    }
+                                }
+                                else if (whichNotesToUse == 1)
+                                {
+                                    if (sustainNote.mustPress) //only bf notes
+                                    {
+                                        actualNotes.Remove(oldNote);
+                                        actualNotes.Add(sustainNote);
+                                    }
+                                }
+                                else if (whichNotesToUse == 2)
+                                {
+                                    actualNotes.Remove(oldNote);
+                                    actualNotes.Add(sustainNote);
+                                }
                             }
-                            */
                         }
                     }
                 }
-                // Sort from least StrumTime to greatest StrumTime
-                actualNotes = actualNotes.Distinct().ToList();
+
+                actualNotes = actualNotes.Distinct().ToList(); //maybe it works maybe doesn't
                 actualNotes.Sort((a, b) => a.strumTime.CompareTo(b.strumTime));
 
-                using (var writer = new StreamWriter(Path.GetFullPath(filePath) + $"{songData.song.songName}-Converted.osu", false))
+                string directory = Path.GetDirectoryName(filePath);
+                string file = Path.GetFileNameWithoutExtension(filePath);
+
+                string newFileName = $"{file}-Converted.osu";
+
+                using (var writer = new StreamWriter(Path.Combine(directory, newFileName), false))
                 {
                     //gonna hardcode the structure for now, in forms version i'm gonna improve it
 
@@ -97,7 +136,7 @@ namespace FNFToOsuManiaConverter
                     writer.WriteLine($"Title: {songData.song.songName}");
                     writer.WriteLine($"Artist: Example Artist");
                     writer.WriteLine($"Creator: Example Creator");
-                    writer.WriteLine($"Version: Example Difficulty\n");
+                    writer.WriteLine($"Version: {diffName}\n");
 
                     writer.WriteLine("[Difficulty]");
                     writer.WriteLine($"HPDrainRate: 4");
@@ -121,10 +160,14 @@ namespace FNFToOsuManiaConverter
                         {
                             writer.WriteLine($"{actualNotes[i].osuX},{actualNotes[i].osuY},{actualNotes[i].osuStrumTime - 20},{actualNotes[i].osuType},0,{actualNotes[i].osuSustainTime}");
                         }
-                        writer.WriteLine($"{actualNotes[i].osuX},{actualNotes[i].osuY},{actualNotes[i].osuStrumTime - 20},{actualNotes[i].osuType},0");
+                        else
+                        {
+                            writer.WriteLine($"{actualNotes[i].osuX},{actualNotes[i].osuY},{actualNotes[i].osuStrumTime - 20},{actualNotes[i].osuType},0");
+                        }
                     }
                 }
 
+                Console.WriteLine("Done");
                 Console.ReadLine();
             }
         }
