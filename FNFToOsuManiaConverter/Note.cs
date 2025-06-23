@@ -63,7 +63,7 @@ namespace FNFToOsuManiaConverter
 
             if (isHoldNote)
             {
-                osuType = 128;
+                osuType = 128; //idk why 128 works
             }
         }
     }

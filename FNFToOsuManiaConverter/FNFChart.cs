@@ -52,22 +52,31 @@ namespace FNFToOsuManiaConverter
                             {
                                 if (!newNote.mustPress && !newNote.isHoldNote)
                                 {
-                                    diffName = "Opponent";
-                                    actualNotes.Add(newNote);
+                                    if(!NoteExists(newNote))
+                                    {
+                                        diffName = "Opponent";
+                                        actualNotes.Add(newNote);
+                                    }
                                 }
                             }
                             else if(whichNotesToUse == 1)
                             {
                                 if (newNote.mustPress && !newNote.isHoldNote) //only bf notes
                                 {
-                                    diffName = "BF";
-                                    actualNotes.Add(newNote);
+                                    if (!NoteExists(newNote))
+                                    {
+                                        diffName = "BF";
+                                        actualNotes.Add(newNote);
+                                    }
                                 }
                             }
                             else if (whichNotesToUse == 2 && !newNote.isHoldNote)
                             {
-                                diffName = "Both";
-                                actualNotes.Add(newNote);
+                                if (!NoteExists(newNote))
+                                {
+                                    diffName = "Both";
+                                    actualNotes.Add(newNote);
+                                }
                             }
 
                             decimal sustainLength = section.sectionNotes[v][2];
@@ -112,7 +121,7 @@ namespace FNFToOsuManiaConverter
                 actualNotes = actualNotes.Distinct().ToList(); //maybe it works maybe doesn't
                 actualNotes.Sort((a, b) => a.strumTime.CompareTo(b.strumTime));
 
-                string directory = Path.GetDirectoryName(filePath);
+                string directory = Path.GetDirectoryName(filePath);     
                 string file = Path.GetFileNameWithoutExtension(filePath);
 
                 string newFileName = $"{file}-Converted.osu";
@@ -124,7 +133,7 @@ namespace FNFToOsuManiaConverter
                     writer.WriteLine("osu file format v14\n");
 
                     writer.WriteLine("[General]");
-                    writer.WriteLine($"AudioFilename: Instt.mp3");
+                    writer.WriteLine($"AudioFilename: Inst.mp3");
                     writer.WriteLine($"AudioLeadIn: 0");
                     writer.WriteLine($"PreviewTime: 25000");
                     writer.WriteLine($"Countdown: 0");
@@ -171,6 +180,18 @@ namespace FNFToOsuManiaConverter
                 Console.ReadLine();
             }
         }
+
+        bool NoteExists(Note newNote)
+        {
+            if (!newNote.isHoldNote)
+            {
+                return actualNotes.Any(n => n.strumTime == newNote.strumTime && n.noteData == newNote.noteData && n.mustPress == newNote.mustPress);
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     public class OnlyDecimalConverter : JsonConverter
@@ -195,7 +216,6 @@ namespace FNFToOsuManiaConverter
                     {
                         if (item.Type == JTokenType.String)
                         {
-                            //token[1] = int.MaxValue; // set non existing NoteType if custom note has been found
                             array.Remove(item);
                         }
                     }
